@@ -24,6 +24,8 @@
 // );
 
 // src/main.tsx
+import { Provider } from "react-redux";
+import { store } from "./app/store";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
@@ -37,7 +39,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 // const clientId:string = process.env.AUTH0_CLIENT_ID!;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+  <>
     
     <Auth0Provider
       domain="dev-perooutlnqi831jy.us.auth0.com"
@@ -47,15 +49,17 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       }}
     >
       
-      <CartProvider>
-        
+      {/* <CartProvider> */}
+        <Provider store = {store}>
+
           <Router>
             <App />
           </Router>
+        </Provider>
 
-      </CartProvider>
+      {/* </CartProvider> */}
       
     </Auth0Provider>
    
-  </React.StrictMode>
+  </>
 );

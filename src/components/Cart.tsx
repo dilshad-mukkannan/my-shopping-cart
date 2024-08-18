@@ -87,8 +87,8 @@
 
 // export default Cart;
 
-import React from "react";
-import { useCart } from "../contexts/CartContext";
+import React, { useEffect } from "react";
+// import { useCart } from "../contexts/CartContext";
 import Navbar from "./Navbar";
 import { FiCheckCircle } from "react-icons/fi";
 import Button from "./Button";
@@ -96,12 +96,38 @@ import { useAuth0 } from "@auth0/auth0-react";
 import LoginButton from "../Auth0/LoginButton";
 import { Link } from "react-router-dom";
 
-const Cart: React.FC = () => {
-  const { state, removeFromCart, updateQuantity } = useCart();
-  const { isAuthenticated } = useAuth0();
+import { useAppSelector, UseAppDispatch } from "../app/hooks";
+import { removeFromCart, updateQuantity, loadItems } from "../features/cart/cartSlice";
 
+const Cart: React.FC = () => {
+  const {items} = useAppSelector(state => state.cart)
+  const dispatch = UseAppDispatch();
+  const {user, isAuthenticated, isLoading } = useAuth0();
+
+  useEffect(() => {
+    if (isAuthenticated && user?.sub) {
+      setTimeout(() => {
+        const storedItem = JSON.parse(localStorage.getItem(`${user?.sub}-cartItems`) || "[]");
+        console.log("Rehydrating storedItems after refresh:", storedItem);
+        if (storedItem.length > 0) {
+          dispatch(loadItems(storedItem));
+        }
+      }, 100); // Small delay to ensure LocalStorage is ready
+    }
+  }, [isAuthenticated, user, dispatch]);
+  
+
+  useEffect(() => {
+    if (isAuthenticated && items.length > 0) {
+      localStorage.setItem(`${user?.sub}-cartItems`, JSON.stringify(items));
+      const storedItem2 = JSON.parse(localStorage.getItem(`${user?.sub}-cartItems`) || "[]");
+      console.log("storeditem2:", storedItem2);
+    } 
+  }, [items, isAuthenticated, user]);
+
+  
   const calculateTotal = () => {
-    return state.items.reduce(
+    return items.reduce(
       (total, item) => total + item.product.price * item.quantity,
       0
     );
@@ -114,6 +140,8 @@ const Cart: React.FC = () => {
   const subtotal = calculateTotal();
   const tax = calculateTax(subtotal);
   const total = subtotal + tax;
+
+  if (isLoading) return "Loading";
 
   if (!isAuthenticated) {
     return (
@@ -162,13 +190,13 @@ const Cart: React.FC = () => {
       <Navbar />
       <div className="container mx-auto p-4">
         <h1 className="text-3xl font-bold mb-4">Shopping Cart</h1>
-        {state.items.length === 0 ? (
+        {items.length === 0 ? (
           <p>Your cart is empty.</p>
         ) : (
           <div className="flex flex-col md:flex-row">
             <div className="w-full md:w-3/4 pr-4">
               <ul>
-                {state.items.map((item) => (
+                {items.map((item) => (
                   <li
                     key={item.product.id}
                     className="flex items-center bg-white rounded-lg shadow-md p-4 mb-4"
@@ -197,10 +225,11 @@ const Cart: React.FC = () => {
                           id={`quantity-${item.product.id}`}
                           value={item.quantity}
                           onChange={(e) =>
-                            updateQuantity(
-                              item.product.id,
-                              parseInt(e.target.value)
-                            )
+                            dispatch(updateQuantity({
+                              productId: item.product.id,
+                              quantity: parseInt(e.target.value)
+                            }
+                            ))
                           }
                           min="1"
                           className="border p-1 rounded w-16"
@@ -208,7 +237,7 @@ const Cart: React.FC = () => {
                       </div>
                     </div>
                     <Button
-                      onClick={() => removeFromCart(item.product.id)}
+                      onClick={() => dispatch(removeFromCart(item.product.id))}
                       text="Remove"
                       className="text-red-500 ml-4"
                     />
@@ -247,3 +276,6 @@ const Cart: React.FC = () => {
 };
 
 export default Cart;
+
+
+

@@ -28,7 +28,7 @@ const fetchData = async (category?: string): Promise<ChartData> => {
     : productData;
 
   return {
-    labels: filteredData.map((item) => item.category),
+    labels: filteredData.map((item) => item.title.slice(0, 10) + ".."),
     datasets: [
       {
         type: "bar",
@@ -40,7 +40,7 @@ const fetchData = async (category?: string): Promise<ChartData> => {
       },
       {
         type: "line",
-        label: "Rating",
+        label: "Count",
         data: filteredData.map((item) => item.rating.count),
         backgroundColor: "rgba(255, 99, 132, 0.2)",
         borderColor: "rgba(255, 99, 132, 1)",
